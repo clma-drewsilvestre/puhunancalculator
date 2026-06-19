@@ -3,3 +3,6 @@
 
 # Earlier draft, kept locally but not tracked
 Magkano_ang_Puhunan_Calculator.html
+
+# Deploy artifacts (contain the live webhook URL — keep out of the public repo)
+.deploy/
