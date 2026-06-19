@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="tl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Magkano ang Puhunan? · Sariling Kape Blueprint</title>
+<meta name="description" content="Libreng calculator: tinatayang puhunan para sa sariling coffee shop. Tapat na numero, walang hype." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --obsidian:#0B0B0D; --obsidian-2:#141417; --obsidian-3:#1C1C21;
+    --gold:#D4AF37; --gold-soft:#E6C96B; --copper:#B87333; --copper-soft:#C98A4B;
+    --bone:#F4F1EA; --dim:#C9C5BC; --faint:#8A877F; --green:#7BA05B;
+    --hairline:rgba(212,175,55,0.18);
+    --serif:'Cormorant Garamond', Georgia, serif;
+    --sans:'Montserrat', system-ui, -apple-system, sans-serif;
+    --radius:7px;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0; background:var(--obsidian); color:var(--bone);
+    font-family:var(--sans); font-weight:400; line-height:1.6;
+    font-size:16px; letter-spacing:0.01em;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  }
+  .wrap{max-width:760px; margin:0 auto; padding:0 20px;}
+  .tnum{font-variant-numeric:tabular-nums; font-feature-settings:"tnum";}
+
+  /* ---- Typography ---- */
+  h1,h2,h3{font-family:var(--serif); font-weight:500; line-height:1.1; margin:0;}
+  .kicker{
+    font-family:var(--sans); font-size:11px; font-weight:600;
+    letter-spacing:0.22em; text-transform:uppercase; color:var(--gold);
+  }
+  .lede{color:var(--dim); font-size:16px;}
+
+  /* ---- Hero ---- */
+  header.hero{padding:64px 0 40px; text-align:center;}
+  header.hero h1{font-size:clamp(44px,12vw,76px); margin:18px 0 14px; letter-spacing:-0.01em;}
+  header.hero h1 em{font-style:italic; color:var(--gold);}
+  header.hero .lede{max-width:480px; margin:0 auto;}
+
+  /* ---- Cards ---- */
+  .card{
+    background:var(--obsidian-2); border:1px solid var(--hairline);
+    border-radius:var(--radius); padding:28px 22px; margin:18px 0;
+  }
+  .card-2{background:var(--obsidian-3);}
+
+  /* ---- Calculator ---- */
+  .qgroup{margin:0 0 26px;}
+  .qgroup:last-child{margin-bottom:0;}
+  .qlabel{
+    display:block; font-size:12px; font-weight:600; letter-spacing:0.12em;
+    text-transform:uppercase; color:var(--faint); margin-bottom:11px;
+  }
+  .qlabel .qnum{color:var(--gold); margin-right:6px;}
+  .opts{display:flex; flex-wrap:wrap; gap:9px;}
+  .opt{
+    appearance:none; cursor:pointer; flex:1 1 auto; min-width:0;
+    background:var(--obsidian); color:var(--dim);
+    border:1px solid rgba(212,175,55,0.22); border-radius:6px;
+    padding:13px 14px; font-family:var(--sans); font-size:14px; font-weight:500;
+    text-align:center; transition:border-color .18s, background .18s, color .18s, transform .12s;
+    line-height:1.25;
+  }
+  .opt small{display:block; font-weight:400; font-size:11px; color:var(--faint); margin-top:3px;}
+  .opt:hover{border-color:var(--gold-soft); color:var(--bone);}
+  .opt:focus-visible{outline:2px solid var(--gold-soft); outline-offset:2px;}
+  .opt[aria-pressed="true"]{
+    background:linear-gradient(180deg, rgba(212,175,55,0.16), rgba(212,175,55,0.06));
+    border-color:var(--gold); color:var(--bone);
+  }
+  .opt[aria-pressed="true"] small{color:var(--gold-soft);}
+  .opt[disabled]{opacity:0.4; cursor:not-allowed;}
+  .qnote{font-size:13px; color:var(--green); margin-top:9px; font-style:italic; display:none;}
+  .qnote.show{display:block;}
+
+  /* ---- Results ---- */
+  #results{display:none;}
+  #results.show{display:block;}
+  @media (prefers-reduced-motion:no-preference){
+    #results.show{animation:fade .6s ease both;}
+    .stagger{animation:fade .6s ease both;}
+  }
+  @keyframes fade{from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:none;}}
+
+  .res-kicker{font-size:12px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--faint);}
+  .res-range{font-family:var(--serif); font-weight:600; color:var(--gold);
+    font-size:clamp(34px,9vw,52px); line-height:1.05; margin:8px 0 4px; letter-spacing:-0.01em;}
+  .res-sub{color:var(--dim); font-size:14px;}
+
+  .tiles{display:flex; gap:14px; margin:22px 0 0; flex-wrap:wrap;}
+  .tile{flex:1 1 200px; background:var(--obsidian); border:1px solid var(--hairline);
+    border-radius:6px; padding:18px 16px;}
+  .tile .t-label{font-size:11px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:var(--faint);}
+  .tile .t-big{font-family:var(--serif); font-size:30px; font-weight:600; color:var(--bone); margin:6px 0 2px;}
+  .tile .t-note{font-size:13px; color:var(--dim);}
+  .tile .t-note b{color:var(--gold-soft); font-weight:600;}
+
+  /* ---- Breakdown ---- */
+  .bd-title{font-size:12px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--faint); margin:30px 0 10px;}
+  .bd-row{display:flex; justify-content:space-between; align-items:center; gap:12px;
+    padding:11px 0; border-bottom:1px solid rgba(212,175,55,0.10); font-size:15px;}
+  .bd-row:last-child{border-bottom:none;}
+  .bd-row .bd-name{color:var(--dim);}
+  .bd-row .bd-val{color:var(--bone); font-weight:500;}
+  .bd-row.locked .bd-name{color:var(--faint);}
+  .bd-row.locked .bd-val{color:var(--copper-soft); font-size:13px; font-style:italic;
+    display:inline-flex; align-items:center; gap:6px;}
+  .lock-ico{width:13px; height:13px; opacity:0.8;}
+
+  /* ---- Reframe ---- */
+  .reframe{margin:18px 0;}
+  .reframe blockquote{margin:0; font-family:var(--serif); font-style:italic;
+    font-size:clamp(21px,5vw,27px); line-height:1.32; color:var(--bone);}
+  .reframe blockquote span{color:var(--gold);}
+  .reframe .cite{margin-top:14px; font-size:13px; color:var(--faint); line-height:1.5;}
+
+  /* ---- CTA / lead form ---- */
+  .hook .kicker{display:block; margin-bottom:10px;}
+  .hook h2{font-size:clamp(28px,7vw,38px); margin-bottom:8px;}
+  .hook h2 em{font-style:italic; color:var(--gold);}
+  .hook .lede{margin:0 0 18px;}
+  .bullets{list-style:none; padding:0; margin:0 0 22px;}
+  .bullets li{display:flex; gap:11px; align-items:flex-start; padding:8px 0; font-size:14.5px; color:var(--dim);}
+  .bullets .ck{flex:none; width:20px; height:20px; margin-top:1px; color:var(--gold);}
+  .bullets li b{color:var(--bone); font-weight:600;}
+
+  form .field{margin-bottom:13px;}
+  form label{display:block; font-size:12px; font-weight:600; letter-spacing:0.06em;
+    text-transform:uppercase; color:var(--faint); margin-bottom:6px;}
+  form label .req{color:var(--copper-soft);}
+  form input{
+    width:100%; background:var(--obsidian); border:1px solid rgba(212,175,55,0.22);
+    border-radius:6px; padding:13px 14px; color:var(--bone); font-family:var(--sans);
+    font-size:16px; transition:border-color .18s;
+  }
+  form input:focus{outline:none; border-color:var(--gold);}
+  form input:focus-visible{outline:2px solid var(--gold-soft); outline-offset:1px;}
+  .err{color:var(--copper-soft); font-size:12.5px; margin-top:5px; display:none;}
+  .err.show{display:block;}
+  .btn{
+    appearance:none; cursor:pointer; width:100%; border:none; border-radius:6px;
+    padding:16px 20px; font-family:var(--sans); font-size:16px; font-weight:700;
+    letter-spacing:0.02em; color:var(--obsidian);
+    background:linear-gradient(180deg, var(--gold-soft), var(--gold));
+    transition:transform .12s, filter .18s; margin-top:6px;
+  }
+  .btn:hover{filter:brightness(1.06);}
+  .btn:active{transform:translateY(1px);}
+  .btn:focus-visible{outline:2px solid var(--bone); outline-offset:2px;}
+  .btn.ghost{background:transparent; color:var(--bone); border:1px solid var(--hairline);}
+  .micro{font-size:12px; color:var(--faint); text-align:center; margin:13px 0 0; line-height:1.5;}
+  .scarcity{font-size:13px; color:var(--gold-soft); text-align:center; margin:14px 0 0; font-weight:500;}
+  .scarcity b{color:var(--gold);}
+
+  /* ---- Success / share ---- */
+  #success{display:none; text-align:center;}
+  #success.show{display:block;}
+  #success .tick{width:56px; height:56px; margin:0 auto 14px; color:var(--green);}
+  #success h2{font-size:clamp(28px,7vw,38px);}
+  #success h2 em{font-style:italic; color:var(--gold);}
+  #success .lede{margin:8px auto 4px; max-width:420px;}
+  .share-q{font-family:var(--serif); font-style:italic; font-size:22px; color:var(--bone); margin:26px 0 16px;}
+  .share-btns{display:flex; flex-direction:column; gap:10px; max-width:340px; margin:0 auto;}
+  .share-btns .btn{margin-top:0;}
+
+  /* ---- Footer ---- */
+  footer{padding:38px 0 56px; text-align:center;}
+  footer .disc{font-size:12px; color:var(--faint); line-height:1.6; max-width:520px; margin:0 auto 14px;}
+  footer .org{font-size:12px; font-weight:600; letter-spacing:0.08em; color:var(--dim); text-transform:uppercase;}
+
+  /* ---- Demand panel ---- */
+  #leads{display:none; position:fixed; inset:0; background:var(--obsidian);
+    z-index:999; overflow-y:auto; padding:24px 0 60px;}
+  #leads.show{display:block;}
+  #leads .verdict{border-radius:var(--radius); padding:18px 18px; margin:14px 0; border:1px solid var(--hairline);}
+  #leads .verdict .v-big{font-family:var(--serif); font-size:34px; font-weight:600;}
+  #leads .lead-row{background:var(--obsidian-2); border:1px solid var(--hairline);
+    border-radius:6px; padding:13px 15px; margin-bottom:9px; font-size:14px;}
+  #leads .lead-row .lr-top{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;}
+  #leads .lead-row b{color:var(--bone);}
+  #leads .lead-row .lr-meta{color:var(--faint); font-size:12.5px; margin-top:4px;}
+  #leads .lead-row .lr-ts{color:var(--faint); font-size:11.5px; white-space:nowrap;}
+  #leads .panel-actions{display:flex; gap:10px; flex-wrap:wrap; margin:16px 0;}
+  #leads .panel-actions .btn{width:auto; flex:1 1 120px; margin-top:0; font-size:14px; padding:12px 16px;}
+  #leads .empty{color:var(--faint); text-align:center; padding:40px 0; font-style:italic;}
+
+  @media (max-width:560px){
+    .wrap{padding:0 16px;}
+    .card{padding:22px 16px;}
+    header.hero{padding:48px 0 32px;}
+    .tiles{flex-direction:column;}
+    .opts{flex-direction:column;}
+    .opt{flex:1 1 auto;}
+  }
+</style>
+</head>
+<body>
+
+<main id="app">
+  <!-- ============ HERO ============ -->
+  <header class="hero wrap">
+    <div class="kicker">Sariling Kape Blueprint · CLMA × Mentors</div>
+    <h1>Magkano ang <em>Puhunan</em>?</h1>
+    <p class="lede">Tatlong tanong lang. Makukuha mo ang tinatayang puhunan para sa sarili mong coffee shop — tapat na numero, walang hula, walang hype.</p>
+  </header>
+
+  <!-- ============ CALCULATOR ============ -->
+  <section class="card wrap" aria-labelledby="calc-h">
+    <h2 id="calc-h" style="font-size:26px; margin-bottom:4px;">Sagutin mo lang ito.</h2>
+    <p class="lede" style="margin:0 0 24px; font-size:14px;">Mag-aautomatic ang resulta pagkatapos mong sagutan lahat.</p>
+
+    <div class="qgroup" id="q1">
+      <span class="qlabel"><span class="qnum">Q1</span> Anong klaseng setup?</span>
+      <div class="opts" role="group" aria-label="Format ng negosyo">
+        <button class="opt" type="button" data-q="format" data-v="home" aria-pressed="false">Home-based<small>Online / bahay</small></button>
+        <button class="opt" type="button" data-q="format" data-v="cart" aria-pressed="false">Cart / Kiosk<small>Maliit na puwesto</small></button>
+        <button class="opt" type="button" data-q="format" data-v="small" aria-pressed="false">Small Café<small>~15–30 sqm</small></button>
+        <button class="opt" type="button" data-q="format" data-v="standard" aria-pressed="false">Standard Café<small>~30–60 sqm</small></button>
+      </div>
+    </div>
+
+    <div class="qgroup" id="q2">
+      <span class="qlabel"><span class="qnum">Q2</span> Saan ilalagay?</span>
+      <div class="opts" role="group" aria-label="Lokasyon">
+        <button class="opt" type="button" data-q="location" data-v="province" aria-pressed="false">Probinsya<small>Lower rent</small></button>
+        <button class="opt" type="button" data-q="location" data-v="strip" aria-pressed="false">Commercial Strip<small>Highway / poblacion</small></button>
+        <button class="opt" type="button" data-q="location" data-v="mall" aria-pressed="false">Mall / CBD<small>Mataas na foot traffic</small></button>
+      </div>
+      <p class="qnote" id="q2note">Nasa bahay — walang upa. 🏠</p>
+    </div>
+
+    <div class="qgroup" id="q3">
+      <span class="qlabel"><span class="qnum">Q3</span> Antas ng kagamitan?</span>
+      <div class="opts" role="group" aria-label="Equipment tier">
+        <button class="opt" type="button" data-q="equip" data-v="entry" aria-pressed="false">Entry<small>Pang-umpisa</small></button>
+        <button class="opt" type="button" data-q="equip" data-v="mid" aria-pressed="false">Mid<small>Balanced</small></button>
+        <button class="opt" type="button" data-q="equip" data-v="premium" aria-pressed="false">Premium<small>Pang-matagalan</small></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RESULTS ============ -->
+  <section id="results" class="wrap" aria-live="polite">
+    <div class="card">
+      <div class="res-kicker">Tinatayang Puhunan</div>
+      <div class="res-range tnum" id="res-range">—</div>
+      <div class="res-sub" id="res-sub">Total na kailangang ilabas bago mag-umpisa.</div>
+
+      <div class="tiles">
+        <div class="tile">
+          <div class="t-label">Buwanang Gastos</div>
+          <div class="t-big tnum" id="res-opex">—</div>
+          <div class="t-note">Monthly OPEX (upa, sahod, kuryente, atbp.)</div>
+        </div>
+        <div class="tile">
+          <div class="t-label">Break-even</div>
+          <div class="t-big tnum" id="res-be">—</div>
+          <div class="t-note">customers/araw · benta na kailangan: <b class="tnum" id="res-besales">—</b>/buwan</div>
+        </div>
+      </div>
+
+      <div class="bd-title">Saan napupunta ang pera</div>
+      <div id="breakdown"></div>
+    </div>
+
+    <!-- Reframe -->
+    <div class="reframe card card-2">
+      <blockquote id="reframe-quote">—</blockquote>
+      <p class="cite" id="reframe-cite"></p>
+    </div>
+
+    <!-- ============ HOOK / LEAD CAPTURE ============ -->
+    <section class="card hook" id="hook" aria-labelledby="hook-h">
+      <span class="kicker">Susunod na hakbang</span>
+      <h2 id="hook-h">Kunin ang iyong <em>Sariling Kape Starter Kit.</em></h2>
+      <p class="lede">Libre. Padadalhan ka namin sa inbox mo — ang kumpletong numero mo, hindi ang generic na estimate.</p>
+
+      <ul class="bullets">
+        <li><svg class="ck" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 10.5l3.5 3.5L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Kompletong breakdown</b> ng eksaktong numero mo — save &amp; ipakita sa pamilya o investor.</span></li>
+        <li><svg class="ck" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 10.5l3.5 3.5L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Supplier shortlist</b> — saan totoong bibili nang hindi naloloko.</span></li>
+        <li><svg class="ck" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 10.5l3.5 3.5L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>7 pinakamahal na pagkakamali</b> ng bagong café owner — at paano iiwasan.</span></li>
+        <li><svg class="ck" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 10.5l3.5 3.5L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>First access bilang Founding Member</b> sa buong Sariling Kape Blueprint paglabas.</span></li>
+      </ul>
+
+      <form id="lead-form" novalidate>
+        <div class="field">
+          <label for="f-name">Pangalan <span class="req">*</span></label>
+          <input type="text" id="f-name" name="name" autocomplete="name" placeholder="Hal. Maria Santos" required />
+          <div class="err" id="e-name">Pakilagay ang pangalan mo.</div>
+        </div>
+        <div class="field">
+          <label for="f-email">Email <span class="req">*</span></label>
+          <input type="email" id="f-email" name="email" autocomplete="email" placeholder="ikaw@email.com" required />
+          <div class="err" id="e-email">Pakilagay ang tamang email.</div>
+        </div>
+        <div class="field">
+          <label for="f-viber">Viber / Mobile <span style="color:var(--faint); font-weight:400; text-transform:none; letter-spacing:0;">(optional)</span></label>
+          <input type="tel" id="f-viber" name="viber" autocomplete="tel" placeholder="09xx xxx xxxx" />
+        </div>
+        <button class="btn" type="submit">Ipadala ang Starter Kit ko</button>
+        <p class="micro">100% libre · Founding Members ang unang aabisuhan · Walang spam.</p>
+        <p class="scarcity" id="scarcity"></p>
+      </form>
+    </section>
+
+    <!-- ============ SUCCESS / SHARE ============ -->
+    <section class="card" id="success" aria-live="polite">
+      <svg class="tick" viewBox="0 0 56 56" fill="none" aria-hidden="true"><circle cx="28" cy="28" r="25" stroke="currentColor" stroke-width="2.5"/><path d="M17 28.5l7.5 7.5L40 20" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <h2>Padating na ang <em>Starter Kit</em> mo!</h2>
+      <p class="lede">Ikaw na isa sa mga <b style="color:var(--gold-soft)">Founding Members</b>. I-check mo ang inbox (at spam folder, just in case).</p>
+
+      <p class="share-q">May kakilala ka bang pangarap din ang sariling café?</p>
+      <div class="share-btns">
+        <button class="btn" type="button" id="share-native">I-share ang calculator</button>
+        <button class="btn ghost" type="button" id="share-viber">Share sa Viber</button>
+        <button class="btn ghost" type="button" id="share-copy">Copy link</button>
+      </div>
+    </section>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="wrap">
+    <p class="disc">Estimate lamang ito base sa karaniwang halaga sa merkado — hindi quotation o garantiya ng kita. Mag-iiba ang aktwal na gastos depende sa lokasyon, supplier, at kondisyon ng puwesto. Para sa edukasyon at pagpaplano.</p>
+    <p class="org">A CLMA Training &amp; Assessment Center × Mentors Business Café initiative.</p>
+  </footer>
+</main>
+
+<!-- ============ DEMAND-SIGNAL PANEL (private; #leads) ============ -->
+<div id="leads" role="dialog" aria-label="Demand dashboard" aria-modal="true">
+  <div class="wrap">
+    <div style="display:flex; justify-content:space-between; align-items:baseline; gap:12px;">
+      <h2 style="font-size:28px;">Demand Signal</h2>
+      <button class="btn ghost" type="button" id="leads-close" style="width:auto; padding:9px 18px; margin:0; font-size:13px;">Close</button>
+    </div>
+    <p class="lede" style="font-size:14px;">Total opt-ins: <b class="tnum" id="leads-count" style="color:var(--gold-soft)">0</b></p>
+
+    <div class="verdict" id="leads-verdict">
+      <div class="v-big" id="verdict-big">—</div>
+      <div id="verdict-text" style="color:var(--dim); font-size:14px; margin-top:4px;"></div>
+    </div>
+
+    <div class="panel-actions">
+      <button class="btn" type="button" id="leads-export">Export CSV</button>
+      <button class="btn ghost" type="button" id="leads-clear">Clear</button>
+    </div>
+
+    <div id="leads-list"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   STORE MODULE — isolated lead I/O (swap to real backend here)
+   ============================================================ */
+const Store = (function(){
+  const KEY = 'skb_leads_v1';
+  const ENDPOINT = ''; // <-- paste GHL/Make/Zapier inbound webhook URL to go live
+
+  function read(){
+    try { return JSON.parse(localStorage.getItem(KEY)) || []; }
+    catch(e){ return []; }
+  }
+  function write(list){
+    try { localStorage.setItem(KEY, JSON.stringify(list)); } catch(e){}
+  }
+  function add(lead){
+    lead.ts = lead.ts || Date.now();
+    const list = read();
+    list.push(lead);
+    write(list);
+    if (ENDPOINT){
+      try {
+        fetch(ENDPOINT, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(lead),
+          keepalive: true
+        }).catch(function(){});
+      } catch(e){}
+    }
+    return lead;
+  }
+  function all(){ return read(); }
+  function count(){ return read().length; }
+  function clear(){ write([]); }
+
+  return { add, all, count, clear };
+})();
+
+/* ============================================================
+   COST MODEL (PHP) — tune these constants to real quotes
+   ============================================================ */
+const FORMATS = {
+  home: {
+    label:'Home-based', sqm:0,
+    equip:{entry:25000, mid:60000, premium:120000},
+    fitout:[0, 6000], furniture:[2000, 10000],
+    inventory:15000, permits:5000, branding:8000, pos:3000,
+    staff:0, utilities:2500, misc:3000, wcMonths:2
+  },
+  cart: {
+    label:'Cart / Kiosk', sqm:4,
+    equip:{entry:80000, mid:160000, premium:300000},
+    fitout:[20000, 55000], furniture:[10000, 30000],
+    inventory:25000, permits:12000, branding:15000, pos:8000,
+    staff:1, utilities:5000, misc:8000, wcMonths:3
+  },
+  small: {
+    label:'Small Café', sqm:22,
+    equip:{entry:200000, mid:420000, premium:720000},
+    fitout:[150000, 380000], furniture:[55000, 130000],
+    inventory:55000, permits:25000, branding:32000, pos:15000,
+    staff:3, utilities:13000, misc:22000, wcMonths:3
+  },
+  standard: {
+    label:'Standard Café', sqm:45,
+    equip:{entry:420000, mid:820000, premium:1450000},
+    fitout:[400000, 950000], furniture:[130000, 320000],
+    inventory:95000, permits:42000, branding:65000, pos:25000,
+    staff:5, utilities:26000, misc:42000, wcMonths:4
+  }
+};
+
+const RENT_PER_SQM = { province:[600,1200], strip:[1200,2500], mall:[2500,5000] };
+const CART_RENT    = { province:[8000,20000], strip:[15000,35000], mall:[25000,60000] };
+const LOC_MULT     = { province:0.85, strip:1.0, mall:1.3 };
+
+const STAFF_COST = 16000;
+const AVG_TICKET = 150;
+const MARGIN     = 0.65;
+const OPEN_DAYS  = 26;
+
+/* ============================================================
+   COMPUTE
+   ============================================================ */
+function rentRange(format, location){
+  if (format === 'home') return [0,0];
+  const f = FORMATS[format];
+  if (format === 'cart') return CART_RENT[location].slice();
+  const r = RENT_PER_SQM[location];
+  return [r[0]*f.sqm, r[1]*f.sqm];
+}
+
+function compute(format, location, equip){
+  const f = FORMATS[format];
+  const isHome = format === 'home';
+  const loc = isHome ? null : location;
+  const locMult = isHome ? 1 : LOC_MULT[loc];
+
+  const [rentLo, rentHi] = rentRange(format, loc);
+
+  // Monthly OPEX
+  const opexLo = rentLo + f.staff*STAFF_COST + f.utilities + f.misc;
+  const opexHi = rentHi + f.staff*STAFF_COST + f.utilities + f.misc;
+  const opexMid = (opexLo + opexHi) / 2;
+
+  const equipCost = f.equip[equip];
+  const depositLo = 3 * rentLo, depositHi = 3 * rentHi;
+  const wcLo = f.wcMonths * opexLo, wcHi = f.wcMonths * opexHi;
+
+  const base = equipCost + f.inventory + f.permits + f.branding + f.pos;
+  const startupLo = base + f.fitout[0]*locMult + f.furniture[0] + depositLo + wcLo;
+  const startupHi = base + f.fitout[1]*locMult + f.furniture[1] + depositHi + wcHi;
+
+  // Break-even
+  const beSales = opexMid / MARGIN;                 // monthly sales needed
+  const beCust  = beSales / AVG_TICKET / OPEN_DAYS; // customers/day
+
+  // Mid values for line-item breakdown
+  const fitoutMid = (f.fitout[0]+f.fitout[1])/2 * locMult;
+  const furnMid   = (f.furniture[0]+f.furniture[1])/2;
+  const depMid     = (depositLo+depositHi)/2;
+  const wcMid      = (wcLo+wcHi)/2;
+
+  return {
+    startupLo, startupHi, opexMid, beSales, beCust, isHome,
+    items: [
+      { name:'Kagamitan (Equipment)',         val:equipCost, locked:false },
+      { name:'Fit-out &amp; Renovation',          val:fitoutMid, locked:false },
+      { name:'Furniture &amp; Fixtures',          val:furnMid,   locked:false },
+      { name:'Inventory (unang stock)',       val:f.inventory, locked:false },
+      { name:'Permits &amp; Lisensya',           val:f.permits, locked:true },
+      { name:'Branding &amp; Marketing',         val:f.branding, locked:true },
+      { name:'Deposit &amp; Working Capital',    val:depMid+wcMid, locked:true }
+    ]
+  };
+}
+
+/* ============================================================
+   FORMATTING
+   ============================================================ */
+const peso = new Intl.NumberFormat('en-PH', { style:'currency', currency:'PHP', maximumFractionDigits:0 });
+function php(n){ return peso.format(Math.round(n)); }
+function phpK(n){ return peso.format(Math.round(n/1000)*1000); } // nearest ₱1,000
+
+/* ============================================================
+   REFRAME COPY (scales with the number / format)
+   ============================================================ */
+function reframe(state, r){
+  const failCite = 'Sa buong mundo, tinatayang 50–74% ng independent cafés ay nagsasara sa loob ng 5 taon (global na proxy estimate). Hindi laki ng puhunan ang dahilan — kundi maling presyo at kawalan ng sistema.';
+  if (state.format === 'home'){
+    return {
+      quote:'Magandang <span>maliit na simula</span> ito — mababa ang risk, mabilis matutunan. Pero tandaan: hindi laki ng puhunan ang dahilan ng pagkabigo. <span>Maling presyo at walang sistema</span> ang pumapatay sa maliliit na kape.',
+      cite: failCite
+    };
+  }
+  const mid = (r.startupLo + r.startupHi) / 2;
+  const years = Math.max(1, Math.round(mid / 180000)); // ~₱15k/buwan na ipon
+  return {
+    quote: 'Ang halagang ito ay katumbas ng <span>humigit-kumulang ' + years + ' taóng ipon</span> — o ilang buwang padala ng isang OFW. Kaya nga kailangang <span>tama ang numero bago ka sumugal.</span>',
+    cite: failCite
+  };
+}
+
+/* ============================================================
+   STATE + UI WIRING
+   ============================================================ */
+const state = { format:null, location:null, equip:null };
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function selectOpt(btn){
+  const q = btn.dataset.q, v = btn.dataset.v;
+  // clear siblings in same group
+  document.querySelectorAll('.opt[data-q="'+q+'"]').forEach(function(b){
+    b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+  });
+  state[q] = v;
+
+  // Home disables location
+  if (q === 'format'){
+    const homeSel = v === 'home';
+    document.querySelectorAll('.opt[data-q="location"]').forEach(function(b){
+      b.disabled = homeSel;
+      if (homeSel) b.setAttribute('aria-pressed','false');
+    });
+    document.getElementById('q2note').classList.toggle('show', homeSel);
+    if (homeSel) state.location = null;
+  }
+  maybeCompute();
+}
+
+function ready(){
+  if (!state.format || !state.equip) return false;
+  if (state.format === 'home') return true;       // location not needed
+  return !!state.location;
+}
+
+function maybeCompute(){
+  if (!ready()){
+    // Inputs incomplete (e.g. left Home but no location yet) — hide stale results.
+    document.getElementById('results').classList.remove('show');
+    return;
+  }
+  const r = compute(state.format, state.location, state.equip);
+  renderResults(r);
+}
+
+function renderResults(r){
+  document.getElementById('res-range').textContent = phpK(r.startupLo) + ' – ' + phpK(r.startupHi);
+  document.getElementById('res-opex').textContent  = php(r.opexMid);
+  document.getElementById('res-be').textContent    = '≈ ' + Math.ceil(r.beCust) + ' tao';
+  document.getElementById('res-besales').textContent = php(r.beSales);
+
+  // breakdown
+  const bd = document.getElementById('breakdown');
+  bd.innerHTML = '';
+  r.items.forEach(function(it){
+    const row = document.createElement('div');
+    row.className = 'bd-row' + (it.locked ? ' locked' : '');
+    if (it.locked){
+      row.innerHTML = '<span class="bd-name">'+it.name+'</span>'+
+        '<span class="bd-val"><svg class="lock-ico" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="4" y="9" width="12" height="8" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M7 9V6.5a3 3 0 016 0V9" stroke="currentColor" stroke-width="1.6"/></svg>nasa Starter Kit</span>';
+    } else {
+      row.innerHTML = '<span class="bd-name">'+it.name+'</span><span class="bd-val tnum">'+php(it.val)+'</span>';
+    }
+    bd.appendChild(row);
+  });
+
+  // reframe
+  const rf = reframe(state, r);
+  document.getElementById('reframe-quote').innerHTML = rf.quote;
+  document.getElementById('reframe-cite').textContent = rf.cite;
+
+  // scarcity
+  updateScarcity();
+
+  // reveal
+  const res = document.getElementById('results');
+  if (!res.classList.contains('show')){
+    res.classList.add('show');
+    if (!reduceMotion){
+      res.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+  }
+}
+
+function updateScarcity(){
+  const BASE = 19; // baseline count to seed scarcity
+  const left = Math.max(3, 50 - BASE - Store.count());
+  document.getElementById('scarcity').innerHTML =
+    'Founding Members access — <b>' + left + ' sa unang 50 na slot</b> ang natitira.';
+}
+
+/* ---- option button events (click + keyboard) ---- */
+document.querySelectorAll('.opt').forEach(function(btn){
+  btn.addEventListener('click', function(){ if(!btn.disabled) selectOpt(btn); });
+});
+
+/* ============================================================
+   LEAD FORM
+   ============================================================ */
+const form = document.getElementById('lead-form');
+function validEmail(s){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s); }
+
+form.addEventListener('submit', function(e){
+  e.preventDefault();
+  const name  = document.getElementById('f-name').value.trim();
+  const email = document.getElementById('f-email').value.trim();
+  const viber = document.getElementById('f-viber').value.trim();
+
+  let ok = true;
+  const eName = document.getElementById('e-name');
+  const eEmail = document.getElementById('e-email');
+  eName.classList.toggle('show', !name); if(!name) ok=false;
+  const badEmail = !validEmail(email); eEmail.classList.toggle('show', badEmail); if(badEmail) ok=false;
+  if (!ok) return;
+
+  Store.add({
+    ts: Date.now(),
+    name: name, email: email, viber: viber,
+    format: state.format, location: state.location, equip: state.equip,
+    source: 'puhunan-calculator'
+  });
+
+  // swap to success
+  document.getElementById('hook').style.display = 'none';
+  const ok2 = document.getElementById('success');
+  ok2.classList.add('show');
+  if (!reduceMotion) ok2.classList.add('stagger');
+  ok2.scrollIntoView({behavior: reduceMotion ? 'auto' : 'smooth', block:'start'});
+});
+
+/* ============================================================
+   SHARE LOOP
+   ============================================================ */
+function shareText(){
+  return 'Gusto mo bang malaman kung magkano ang puhunan sa sariling coffee shop? Libreng calculator: ';
+}
+function shareUrl(){ return window.location.href.split('#')[0]; }
+
+document.getElementById('share-native').addEventListener('click', function(){
+  const data = { title:'Magkano ang Puhunan?', text: shareText(), url: shareUrl() };
+  if (navigator.share){
+    navigator.share(data).catch(function(){});
+  } else {
+    copyLink('Na-copy ang link — i-paste mo na lang sa kausap mo.');
+  }
+});
+document.getElementById('share-viber').addEventListener('click', function(){
+  window.location.href = 'viber://forward?text=' + encodeURIComponent(shareText() + shareUrl());
+});
+document.getElementById('share-copy').addEventListener('click', function(){ copyLink(); });
+
+function copyLink(msg){
+  const txt = shareText() + shareUrl();
+  const done = function(){ alert(msg || 'Na-copy ang link!'); };
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done, function(){ legacyCopy(txt); done(); });
+  } else { legacyCopy(txt); done(); }
+}
+function legacyCopy(txt){
+  const ta = document.createElement('textarea');
+  ta.value = txt; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); } catch(e){}
+  document.body.removeChild(ta);
+}
+
+/* ============================================================
+   DEMAND-SIGNAL PANEL (#leads)
+   ============================================================ */
+function fmtTs(ts){
+  try { return new Date(ts).toLocaleString('en-PH', {dateStyle:'medium', timeStyle:'short'}); }
+  catch(e){ return new Date(ts).toLocaleString(); }
+}
+
+function renderLeads(){
+  const list = Store.all().slice().sort(function(a,b){ return b.ts - a.ts; });
+  const n = list.length;
+  document.getElementById('leads-count').textContent = n;
+
+  // verdict gate
+  const vBig = document.getElementById('verdict-big');
+  const vTxt = document.getElementById('verdict-text');
+  const vBox = document.getElementById('leads-verdict');
+  let color, head, body;
+  if (n <= 9){ color='var(--copper)'; head='Fix messaging'; body='0–9 opt-ins. Hindi pa malinaw ang demand o ang mensahe. Ayusin ang hook bago mag-scale.'; }
+  else if (n <= 24){ color='var(--gold)'; head='Lean green light'; body='10–24 opt-ins. May demand. Pwede nang i-test ang susunod na hakbang.'; }
+  else { color='var(--green)'; head='Strong demand'; body='25+ opt-ins. Malakas ang hatak — itaas ang presyo para sa Cohort 02.'; }
+  vBig.textContent = head; vBig.style.color = color;
+  vBox.style.borderColor = color;
+  vTxt.textContent = body;
+
+  // list
+  const wrap = document.getElementById('leads-list');
+  wrap.innerHTML = '';
+  if (!n){ wrap.innerHTML = '<div class="empty">Wala pang opt-in. Lalabas dito ang mga lead.</div>'; return; }
+  list.forEach(function(l){
+    const row = document.createElement('div');
+    row.className = 'lead-row';
+    const meta = [l.format, l.location, l.equip].filter(Boolean).join(' · ') || '—';
+    row.innerHTML =
+      '<div class="lr-top"><b>'+escapeHtml(l.name||'—')+'</b><span class="lr-ts">'+fmtTs(l.ts)+'</span></div>'+
+      '<div class="lr-meta">'+escapeHtml(l.email||'')+(l.viber?(' · '+escapeHtml(l.viber)):'')+'</div>'+
+      '<div class="lr-meta">'+escapeHtml(meta)+'</div>';
+    wrap.appendChild(row);
+  });
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+
+function exportCSV(){
+  const list = Store.all().slice().sort(function(a,b){ return b.ts - a.ts; });
+  const cols = ['ts','name','email','viber','format','location','equip','source'];
+  const rows = [cols.join(',')];
+  list.forEach(function(l){
+    rows.push(cols.map(function(c){
+      let v = c==='ts' ? new Date(l.ts).toISOString() : (l[c]==null?'':l[c]);
+      v = String(v).replace(/"/g,'""');
+      return /[",\n]/.test(v) ? '"'+v+'"' : v;
+    }).join(','));
+  });
+  const blob = new Blob([rows.join('\n')], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'skb_leads_'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+}
+
+function openLeads(){ document.getElementById('leads').classList.add('show'); renderLeads(); }
+function closeLeads(){
+  document.getElementById('leads').classList.remove('show');
+  if (location.hash === '#leads'){ history.replaceState(null,'',location.pathname+location.search); }
+}
+
+document.getElementById('leads-close').addEventListener('click', closeLeads);
+document.getElementById('leads-export').addEventListener('click', exportCSV);
+document.getElementById('leads-clear').addEventListener('click', function(){
+  if (confirm('Burahin lahat ng naka-save na lead sa device na ito?')){ Store.clear(); renderLeads(); }
+});
+
+function checkHash(){ if (location.hash === '#leads') openLeads(); }
+window.addEventListener('hashchange', checkHash);
+checkHash();
+</script>
+
+<!-- =====================================================================
+  DEPLOY & CONFIG NOTES
+  ---------------------------------------------------------------------
+  (1) GO LIVE — capture leads to a real backend:
+      In the <script>, find the Store module near the top:
+          const ENDPOINT = '';
+      Paste your inbound webhook URL (GHL / Make / Zapier), e.g.
+          const ENDPOINT = 'https://hooks.zapier.com/hooks/catch/xxxx/yyyy/';
+      Each opt-in is then POSTed as JSON (keepalive) AND still saved
+      on-device. No other code needs to change — all lead I/O lives
+      inside the isolated Store module (next phase: swap Store internals
+      for a real backend / Xendit checkout — seams left untouched here).
+
+  (2) PRIVATE DEMAND DASHBOARD:
+      Add  #leads  to the page URL (e.g. yoursite.netlify.app/#leads)
+      to open the demand panel: total opt-ins, pre-sale gate verdict,
+      lead list, Export CSV, Clear, Close. It is never linked from the
+      page — share the #leads URL only with yourself.
+
+  (3) DEPLOY (no build step):
+      - Double-click this .html file to test locally, OR
+      - Go to https://app.netlify.com/drop and drag this single file in.
+      Only external resource is Google Fonts. No frameworks, no bundler.
+====================================================================== -->
+</body>
+</html>
